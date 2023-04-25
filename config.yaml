@@ -1,0 +1,41 @@
+token: placeholder
+channels:
+  # OFS #lfg
+  "745036737943699546":
+    - action: delete
+      when:
+        type: logical_NOT
+        operand:
+          type: logical_OR
+          operands:
+            - type: mentions_size
+              attr: channels
+            - type: mentions_size
+              attr: crosspostedChannels
+            - type: mentions_size
+              attr: members
+            - type: mentions_size
+              attr: roles
+            - type: mentions_size
+              attr: users
+            - type: mentions_bool
+              attr: everyone
+            - type: mentions_bool
+              attr: repliedUser
+
+  # OFS #open-lfg
+  "1078848430094422016":
+    - action: delete
+      when:
+        type: mentions_has
+        attr: roles
+        # @LFG
+        id: "749589703371653158"
+
+  # Test channel
+  # "1054073312977887232":
+  #   - action: delete
+  #     when:
+  #       type: mentions_has
+  #       attr: roles
+  #       id: "1054074056678318200"

@@ -1,5 +1,7 @@
 const events = require('events');
+const fs = require('fs');
 
+const YAML = require('yaml');
 const {Client, GatewayIntentBits} = require('discord.js');
 
 const discord = new Client({
@@ -10,7 +12,7 @@ const discord = new Client({
   ],
 });
 
-const config = require('./config.json');
+const config = YAML.parse(fs.readFileSync('./config.yaml', 'utf8'));
 try {
   Object.assign(config, require('./config.private.json'));
 } catch (e) {
@@ -25,29 +27,48 @@ try {
     if (message.author.bot || message.author.system) {
       return;
     }
-    if (!config.channels.includes(message.channelId)) {
+    const actions = config.channels[message.channelId];
+    if (!actions) {
       return;
     }
 
-    const mentions = message.mentions;
-    if (
-      mentions.channels?.size ||
-      mentions.crosspostedChannels?.size ||
-      mentions.everyone ||
-      mentions.members?.size ||
-      mentions.repliedUser ||
-      mentions.roles?.size ||
-      mentions.users?.size
-    ) {
-      return;
-    }
+    for (const action of actions) {
+      try {
+        const handleOp = (op) => {
+          switch (op.type) {
+            case 'logical_AND':
+              return op.operands.every(handleOp);
+            case 'logical_OR':
+              return op.operands.some(handleOp);
+            case 'logical_NOT':
+              return !handleOp(op.operand);
 
-    console.log(`Delete message in channel ${message.channelId}: ` +
-      message.cleanContent);
-    try {
-      await message.delete();
-    } catch (e) {
-      console.error(e);
+            case 'mentions_size':
+              return message.mentions[op.attr]?.size;
+            case 'mentions_bool':
+              return !!message.mentions[op.attr];
+            case 'mentions_has':
+              return message.mentions[op.attr]?.has(op.id);
+
+            default:
+              throw new Error(`Unhandled op type ${op.type}`);
+          }
+        };
+
+        if (handleOp(action.when)) {
+          switch (action.action) {
+            case 'delete':
+              console.log(`Delete message in channel ${message.channelId}: ` +
+                message.cleanContent);
+              await message.delete();
+              continue;
+            default:
+              throw new Error(`Unhandled action ${action.action}`);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
     }
   });
 }());
