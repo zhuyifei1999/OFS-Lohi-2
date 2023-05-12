@@ -23,6 +23,29 @@ channels:
             - type: mentions_bool
               attr: repliedUser
 
+  # OFS #lfg-requirements
+  "1103854137126432828":
+    - action: delete
+      when:
+        type: logical_NOT
+        operand:
+          type: logical_OR
+          operands:
+            - type: mentions_size
+              attr: channels
+            - type: mentions_size
+              attr: crosspostedChannels
+            - type: mentions_size
+              attr: members
+            - type: mentions_size
+              attr: roles
+            - type: mentions_size
+              attr: users
+            - type: mentions_bool
+              attr: everyone
+            - type: mentions_bool
+              attr: repliedUser
+
   # OFS #open-lfg
   "1078848430094422016":
     - action: delete
